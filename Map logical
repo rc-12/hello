@@ -1,0 +1,113 @@
+#include <iostream>
+#include <cmath>
+#include <iterator>
+#include <map>
+using namespace std;
+
+#define maxProcess 20;
+
+bool isPowerOfTwo(int n) {
+    if (n == 0)
+        return false;
+    return (ceil(log2(n)) == floor(log2(n)));
+}
+
+int allocateMemory(int **memory, const int memSize, int &page) {
+    for (int i =  0; i < memSize; i++) {
+        // if (memSize*i < page*memSize) {
+        //     cout << "Out of memory\n";
+        //     return -1;
+        // } 
+        if (memory[i][0] == -1) {
+            for (int j = 0; j < memSize; j++) {
+                memory[i][j] = j;
+            }
+            return i;
+        }
+    }
+    return -1;
+}
+
+int main() {
+    int pageSize, memSize, totalFrames;
+    int pageCount = 0;
+    int **frames;
+    map<int, int> processMap, pageTable;
+
+    cout << "---------Logical Address to Physical Address--------\n\n";
+    cout << "Enter page size: ";
+    cin >> pageSize;
+    cout << "Enter physical memory size: ";
+    cin >> memSize;
+    cout << "---Creating Page Table---\n\n";
+
+    //Check if page size and memory size are in powers of 2
+    if (!isPowerOfTwo(pageSize) && !isPowerOfTwo(memSize)) {
+        cout << "Please enter sizes in powers of two\n";
+        exit(0);
+    }
+
+    totalFrames = memSize / pageSize;
+    frames = new int*[totalFrames];
+    // pageTable = new int[totalFrames];
+    for (int i = 0; i < totalFrames; i++) {
+        frames[i] = new int[pageSize];
+        for (int j = 0; j < pageSize; j++) {
+            frames[i][j] = -1;
+        }
+    }
+
+    char cont = 'y';
+    while (cont == 'y' || cont == 'Y') {
+        int ch;
+        cout << "\n1. Add a Process\n2. Fetch frame Number\n3. Remove a Process\n";
+        cin >> ch;
+
+        switch (ch) {
+            case 1: {
+                int pid, size;
+                cout << "Enter process ID: ";
+                cin >> pid;
+                cout << "Enter process size: ";
+                cin >> size;
+                int pagesNeeded = ceil(size/pageSize);
+                processMap[pid] = size;
+                for (int i = 0; i < pagesNeeded; i++) {
+                    pageTable[pageCount] = allocateMemory(frames, memSize, pageCount);
+                    pageCount++;
+                }
+
+                //Display page table
+                cout << "---------------------\nPage Number\tFrame Number\n";
+                for (map<int, int>::iterator iter = pageTable.begin(); iter != pageTable.end(); ++iter) {
+                    cout << "\t" << iter->first << "\t\t" << iter->second << endl;
+                }
+                break;
+            }
+            case 2: {
+                int pid, pageNo;
+                cout << "Enter process ID: ";
+                cin >> pid;
+                cout << "Enter page number: ";
+                cin >> pageNo;
+                if (processMap.find(pid) != processMap.end()) {
+                    int frame = pageTable[pageNo];
+                    cout << "Page " << pageNo << " of process " << pid << " is in frame: " << frame << endl;
+                } else {
+                    cout << "Process does not exist\n";
+                }
+                break;
+            }      
+            case 3: {
+                break;
+            }   
+            default: {
+                cout << "Please enter a valid choice\n";
+                break;
+            }
+        }
+
+        cout << "Continue? Y/N: ";
+        cin >> cont;
+    }
+}
